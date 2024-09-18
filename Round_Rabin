@@ -1,0 +1,126 @@
+#include<stdio.h>
+
+typedef struct{
+    int pid;
+    int at;
+    int bt;
+    int tat;
+    int ct;
+    int wt;
+    int flag;
+    int initial;
+} process;
+
+int main()
+{
+    int n, total_time = 0, completed = 0, time_quantum;
+    printf("Enter the number of processes: ");
+    scanf("%d", &n);
+    process p[n + 1];
+    int gantt[100], gantt_time[100], gantt_index = 0; 
+    for (int i = 1; i <= n; i++) {
+        p[i].flag = 0;
+    }
+    for (int i = 1; i <= n; i++) {
+        p[i].pid = i;
+        printf("Enter the Arrival time for process %d: ", i);
+        scanf("%d", &p[i].at);
+        printf("Enter the Burst time for process %d: ", i);
+        scanf("%d", &p[i].bt);
+        p[i].initial = p[i].bt; 
+        printf("\n");
+    }
+    printf("Enter the time quantum: ");
+    scanf("%d", &time_quantum);
+
+    int queue[100], front = 0, rear = 0;
+    int current_time = 0;
+
+    
+    for (int i = 1; i <= n; i++) {
+        if (p[i].at == 0) {
+            queue[rear++] = i;
+        }
+    }
+
+    while (completed < n) {
+        if (front == rear) {
+            current_time++;
+            for (int i = 1; i <= n; i++) {
+                if (p[i].at == current_time) {
+                    queue[rear++] = i;
+                }
+            }
+            continue;
+        }
+
+        int index = queue[front++];
+        if (p[index].bt > time_quantum) {
+            current_time += time_quantum;
+            p[index].bt -= time_quantum;
+            for (int i = 1; i <= n; i++) {
+                if (p[i].at > current_time - time_quantum && p[i].at <= current_time) {
+                    queue[rear++] = i;
+                }
+            }
+            queue[rear++] = index;
+            gantt[gantt_index] = p[index].pid;
+            gantt_time[gantt_index++] = time_quantum;
+        } else {
+            current_time += p[index].bt;
+            gantt[gantt_index] = p[index].pid;
+            gantt_time[gantt_index++] = p[index].bt;
+            p[index].bt = 0;
+            p[index].ct = current_time;
+            p[index].tat = p[index].ct - p[index].at;
+            p[index].wt = p[index].tat - p[index].initial;
+            completed++;
+        }
+    }
+
+    for (int i = 1; i <= n; i++) {
+        for (int j = i + 1; j <= n; j++) {
+            if (p[i].pid > p[j].pid) {
+                process temp = p[j];
+                p[j] = p[i];
+                p[i] = temp;
+            }
+        }
+    }
+
+    printf("\n");
+    for (int i = 0; i <= 20; i++) {
+        printf("--");
+    }
+    printf("\n");
+    printf("pid     at      bt      tat     wt\n");
+
+    float total_tat = 0;
+    float total_wt = 0;
+    
+    for (int i = 1; i <= n; i++) {
+        printf("%d       %d       %d       %d       %d\n", p[i].pid, p[i].at, p[i].initial, p[i].tat, p[i].wt);
+        total_tat += p[i].tat;
+        total_wt += p[i].wt;
+    }
+
+    printf("\n");
+    printf("The average turnaround time is %.2f\n", total_tat / n);
+    printf("The average waiting time is %.2f\n", total_wt / n);
+
+    // Print Gantt chart
+    printf("\nGantt Chart:\n");
+    for (int i = 0; i < gantt_index; i++) {
+        printf("| P%d ", gantt[i]);
+    }
+    printf("|\n");
+    int time = 0;
+    printf("0");
+    for (int i = 0; i < gantt_index; i++) {
+        time += gantt_time[i];
+        printf("   %d", time);
+    }
+    printf("\n");
+
+    return 0;
+}
